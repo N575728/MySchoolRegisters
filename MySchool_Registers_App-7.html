@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MySchool Registers</title>
+<style>
+  :root{
+    --navy:#1c3144; --navy-dark:#132330; --cream:#f7f4ee; --paper:#ffffff;
+    --gen:#2f6690; --gen-light:#e8f1f7;
+    --mdm:#a65e2e; --mdm-light:#faeee2;
+    --ok:#2e7d4f; --bad:#b3402d; --border:#d9d3c6; --text:#242220; --muted:#6b6459;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Noto Sans Telugu','Nirmala UI','Segoe UI',Arial,sans-serif;background:var(--cream);color:var(--text);}
+  #app{display:flex;min-height:100vh;}
+  #sidebar{width:250px;background:var(--navy);color:#fff;flex-shrink:0;display:flex;flex-direction:column;}
+  #sidebar .brand{padding:18px 16px 10px;border-bottom:1px solid rgba(255,255,255,.15);}
+  #sidebar .brand h1{font-size:17px;margin:0 0 2px;}
+  #sidebar .brand small{color:#c9d3da;font-size:11px;}
+  #navlist{flex:1;overflow-y:auto;padding:8px 0;}
+  .navgroup-title{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9fb0bd;padding:14px 16px 4px;}
+  .navitem{display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;font-size:14px;color:#e8edf0;border-left:3px solid transparent;}
+  .navitem:hover{background:rgba(255,255,255,.08);}
+  .navitem.active{background:rgba(255,255,255,.14);border-left-color:#f2c14e;font-weight:600;}
+  .navitem .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .dot.gen{background:#6fa8d6;} .dot.mdm{background:#e39a5c;}
+  #main{flex:1;min-width:0;padding:24px 30px;overflow-x:auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;flex-wrap:wrap;gap:8px;}
+  .topbar h2{margin:0;font-size:21px;color:var(--navy);}
+  .topbar .today{color:var(--muted);font-size:13px;}
+  .card{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:18px;}
+  .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
+  .stat{background:var(--paper);border:1px solid var(--border);border-left:4px solid var(--gen);border-radius:6px;padding:12px 14px;}
+  .stat.mdm{border-left-color:var(--mdm);}
+  .stat .num{font-size:24px;font-weight:700;color:var(--navy);}
+  .stat .lbl{font-size:12px;color:var(--muted);}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--paper);}
+  th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;white-space:nowrap;}
+  th{background:var(--gen-light);color:var(--navy);position:sticky;top:0;}
+  .mdmtable th{background:var(--mdm-light);}
+  tr:nth-child(even) td{background:#fbfaf7;}
+  .tablewrap{overflow:auto;max-height:65vh;border:1px solid var(--border);border-radius:6px;}
+  input,select,button,textarea{font-family:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:#fff;}
+  button{cursor:pointer;background:var(--gen);color:#fff;border:none;padding:7px 14px;font-weight:600;}
+  button:hover{opacity:.9;}
+  button.secondary{background:#fff;color:var(--gen);border:1px solid var(--gen);}
+  button.danger{background:var(--bad);}
+  button.small{padding:3px 9px;font-size:12px;}
+  .formrow{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:flex-end;}
+  .formrow label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px;}
+  .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+  .pill.P{background:#dcf3e3;color:var(--ok);} .pill.A{background:#fbe1db;color:var(--bad);}
+  .att-cell{width:26px;height:26px;text-align:center;cursor:pointer;font-weight:700;border-radius:4px;user-select:none;}
+  .att-cell.P{background:#dcf3e3;color:var(--ok);} .att-cell.A{background:#fbe1db;color:var(--bad);} .att-cell.none{background:#f0eee8;color:#bbb;}
+  .actions button{margin-right:4px;}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;}
+  .section-title{font-weight:700;color:var(--navy);margin:16px 0 8px;font-size:15px;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:999;opacity:0;transition:opacity .3s;}
+  .toast.show{opacity:1;}
+  .print-wrap{display:flex;flex-direction:column;min-height:calc(100vh - 90px);}
+  .letterhead{text-align:center;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:16px;}
+  .letterhead .lh-school{font-size:20px;font-weight:800;color:var(--navy);}
+  .letterhead .lh-meta{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .letterhead .lh-register{font-size:14px;font-weight:700;margin-top:8px;background:var(--gen-light);color:var(--gen);display:inline-block;padding:3px 16px;border-radius:14px;}
+  #regInner{flex:1;}
+  .sign-footer{display:flex;justify-content:space-between;margin-top:40px;padding-top:6px;}
+  .sign-box{width:260px;}
+  .sign-line{border-top:1px solid #444;margin-bottom:6px;margin-top:36px;}
+  .sign-box div:last-child{font-size:13px;color:var(--text);}
+  @media print{
+    #sidebar,.no-print{display:none!important;}
+    #main{padding:0;}
+    body{background:#fff;}
+    .letterhead{margin-bottom:10px;}
+    .sign-footer{margin-top:60px;}
+  }
+  @media (max-width:800px){
+    #app{flex-direction:column;}
+    #sidebar{width:100%;}
+    #navlist{max-height:220px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="brand">
+      <h1 id="brandName">MySchool Registers</h1>
+      <small id="brandSub">ఆఫ్‌లైన్ స్కూల్ రిజిస్టర్ యాప్</small>
+    </div>
+    <div id="navlist"></div>
+  </div>
+  <div id="main">
+    <div class="topbar">
+      <h2 id="viewTitle">Dashboard</h2>
+      <div class="today" id="todayLbl"></div>
+    </div>
+    <div id="viewBody"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<input type="file" id="importFile" accept="application/json" style="display:none">
+
+<script>
+/* ===================== DATA MODEL & STORAGE ===================== */
+const STORAGE_KEY = 'myschool_registers_db_v1';
+
+function defaultDB(){
+  return {
+    settings:{
+      schoolName:'', diseCode:'', village:'', mandal:'', district:'',
+      classes:['1','2','3','4','5'],
+      teachers:[],
+      rates:{ riceGmPerChild:100, cookingCost:6.25, eggRate:6, chikkiRate:3, ragiMaltRate:5, ragiMaltGm:20, hmName:'' },
+      weeklyMenu:{0:'holiday',1:'egg',2:'ragimalt',3:'egg',4:'chikki',5:'egg',6:'ragimalt'},
+      riceOpeningBalance:0
+    },
+    students:[],
+    census:[],
+    attendance:{},
+    teacherAttendance:{},
+    clRegister:[],
+    visitBook:[],
+    cce:[],
+    mdmReceipts:[],
+    dashboardNotes:[]
+  };
+}
+
+let DB = loadDB();
+
+function loadDB(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      // merge with defaults to fill any missing keys from future updates
+      const def = defaultDB();
+      return Object.assign(def, parsed, {
+        settings: Object.assign(def.settings, parsed.settings||{})
+      });
+    }
+  }catch(e){ console.error('Load failed', e); }
+  return defaultDB();
+}
+
+function saveDB(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+    showToast('సేవ్ అయ్యింది ✓');
+  }catch(e){
+    console.error(e);
+    showToast('సేవ్ విఫలమైంది! Export తీసుకోండి.');
+  }
+}
+
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1400);
+}
+
+/* ===================== UTILITIES ===================== */
+function uid(){ return 'id'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+function pad(n){ return n<10?'0'+n:''+n; }
+function fmtDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function todayStr(){ return fmtDate(new Date()); }
+function escapeHtml(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function activeStudents(cls){
+  return DB.students.filter(s=>s.status!=='left' && (!cls || cls==='ALL' || s.class===cls));
+}
+function teacherName(id){ const t=DB.settings.teachers.find(x=>x.id===id); return t?t.name:'—'; }
+function studentName(id){ const s=DB.students.find(x=>x.id===id); return s?(s.nameTe||s.nameEn):'—'; }
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function weekdayOf(dateStr){ return new Date(dateStr+'T00:00:00').getDay(); }
+function monthLabel(y,m){
+  const names=['జనవరి','ఫిబ్రవరి','మార్చి','ఏప్రిల్','మే','జూన్','జూలై','ఆగస్టు','సెప్టెంబర్','అక్టోబర్','నవంబర్','డిసెంబర్'];
+  return names[m]+' '+y;
+}
+
+/* attendance helpers - feeds all MDM registers */
+function getAllAttendanceDates(){
+  return Object.keys(DB.attendance).sort();
+}
+function getPresentCount(dateStr){
+  const rec = DB.attendance[dateStr];
+  if(!rec) return 0;
+  let c=0;
+  activeStudents().forEach(s=>{ if(rec[s.id]==='P') c++; });
+  return c;
+}
+function getPresentCountForClass(dateStr, cls){
+  const rec = DB.attendance[dateStr];
+  if(!rec) return 0;
+  let c=0;
+  activeStudents(cls).forEach(s=>{ if(rec[s.id]==='P') c++; });
+  return c;
+}
+
+/* ===================== NAVIGATION ===================== */
+const NAV = [
+  {group:'ముఖ్య', items:[
+    {id:'dashboard', label:'డాష్‌బోర్డ్'},
+  ]},
+  {group:'పాఠశాల రిజిస్టర్లు', cls:'gen', items:[
+    {id:'admission', label:'1. అడ్మిషన్ రిజిస్టర్'},
+    {id:'census', label:'2. సెన్సస్ రిజిస్టర్'},
+    {id:'stuattend', label:'3. విద్యార్థుల హాజరు'},
+    {id:'teachattend', label:'4. టీచర్ల హాజరు'},
+    {id:'clreg', label:'5. C.L. రిజిస్టర్'},
+    {id:'visitbook', label:'6. విజిట్ బుక్'},
+    {id:'cce', label:'7. C.C.E. మార్కులు'},
+  ]},
+  {group:'MDM రిజిస్టర్లు (హాజరు ఆధారంగా ఆటో)', cls:'mdm', items:[
+    {id:'riceuc', label:'1. రైస్ U.C. రిజిస్టర్'},
+    {id:'expenditure', label:'2. ఖర్చు రిజిస్టర్ (MDM)'},
+    {id:'egg', label:'3. గుడ్డు రిజిస్టర్'},
+    {id:'chikki', label:'4. చిక్కీ రిజిస్టర్'},
+    {id:'ragimalt', label:'5. రాగి మాల్ట్ & బెల్లం రిజిస్టర్'},
+  ]},
+  {group:'సెట్టింగ్స్', items:[
+    {id:'settings', label:'⚙ సెట్టింగ్స్ & బ్యాకప్'},
+  ]}
+];
+
+let currentView='dashboard';
+
+function renderNav(){
+  const el=document.getElementById('navlist');
+  let html='';
+  NAV.forEach(g=>{
+    html+=`<div class="navgroup-title">${g.group}</div>`;
+    g.items.forEach(it=>{
+      const dot = g.cls ? `<span class="dot ${g.cls}"></span>` : '';
+      html+=`<div class="navitem ${it.id===currentView?'active':''}" data-view="${it.id}">${dot}<span>${it.label}</span></div>`;
+    });
+  });
+  el.innerHTML=html;
+  el.querySelectorAll('.navitem').forEach(n=>{
+    n.addEventListener('click',()=>{ currentView=n.dataset.view; renderNav(); renderView(); });
+  });
+}
+
+const VIEW_TITLES = {
+  dashboard:'డాష్‌బోర్డ్', admission:'1. అడ్మిషన్ రిజిస్టర్', census:'2. సెన్సస్ రిజిస్టర్',
+  stuattend:'3. విద్యార్థుల హాజరు రిజిస్టర్', teachattend:'4. టీచర్ల హాజరు రిజిస్టర్',
+  clreg:'5. C.L. రిజిస్టర్', visitbook:'6. విజిట్ బుక్', cce:'7. C.C.E. మార్కులు & గ్రేడింగ్',
+  riceuc:'MDM: రైస్ U.C. రిజిస్టర్', expenditure:'MDM: ఖర్చు రిజిస్టర్', egg:'MDM: గుడ్డు రిజిస్టర్',
+  chikki:'MDM: చిక్కీ రిజిస్టర్', ragimalt:'MDM: రాగి మాల్ట్ & బెల్లం రిజిస్టర్', settings:'సెట్టింగ్స్ & బ్యాకప్'
+};
+
+function letterheadHtml(registerTitle){
+  const s = DB.settings;
+  return `<div class="letterhead">
+    <div class="lh-school">${escapeHtml(s.schoolName)||'పాఠశాల పేరు (Settings లో నమోదు చేయండి)'}</div>
+    <div class="lh-meta">DISE కోడ్: ${escapeHtml(s.diseCode)||'—'} &nbsp;|&nbsp; గ్రామం: ${escapeHtml(s.village)||'—'} &nbsp;|&nbsp; మండలం: ${escapeHtml(s.mandal)||'—'} &nbsp;|&nbsp; జిల్లా: ${escapeHtml(s.district)||'—'}</div>
+    <div class="lh-register">${escapeHtml(registerTitle)}</div>
+  </div>`;
+}
+function signatureFooterHtml(){
+  const s = DB.settings;
+  return `<div class="sign-footer">
+    <div class="sign-box">
+      <div class="sign-line"></div>
+      <div>ప్రధానోపాధ్యాయుడు సంతకం (Head Master Signature)</div>
+    </div>
+    <div class="sign-box" style="text-align:right">
+      <div class="sign-line"></div>
+      <div><b>${escapeHtml(s.schoolName)||'పాఠశాల పేరు'}</b></div>
+    </div>
+  </div>`;
+}
+
+function renderView(){
+  document.getElementById('viewTitle').textContent = VIEW_TITLES[currentView]||'';
+  document.getElementById('todayLbl').textContent = 'ఈరోజు: '+todayStr();
+  const body=document.getElementById('viewBody');
+  body.innerHTML = `<div class="print-wrap">
+    ${letterheadHtml(VIEW_TITLES[currentView]||'')}
+    <div id="regInner"></div>
+    ${signatureFooterHtml()}
+  </div>`;
+  const renderers={
+    dashboard:renderDashboard, admission:renderAdmission, census:renderCensus,
+    stuattend:renderStuAttend, teachattend:renderTeachAttend, clreg:renderCL,
+    visitbook:renderVisitBook, cce:renderCCE, riceuc:()=>renderMdmLedger('rice'),
+    expenditure:()=>renderMdmLedger('expenditure'), egg:()=>renderMdmLedger('egg'),
+    chikki:()=>renderMdmLedger('chikki'), ragimalt:()=>renderMdmLedger('ragimalt'),
+    settings:renderSettings
+  };
+  (renderers[currentView]||renderDashboard)();
+}
+
+/* ===================== DASHBOARD ===================== */
+function renderDashboard(){
+  const dates = getAllAttendanceDates();
+  const lastDate = dates.length?dates[dates.length-1]:null;
+  const presentToday = lastDate? getPresentCount(lastDate):0;
+  const body=document.getElementById('regInner');
+  body.innerHTML=`
+    <div class="grid4">
+      <div class="stat"><div class="num">${DB.students.filter(s=>s.status!=='left').length}</div><div class="lbl">మొత్తం విద్యార్థులు</div></div>
+      <div class="stat"><div class="num">${DB.settings.teachers.length}</div><div class="lbl">ఉపాధ్యాయులు</div></div>
+      <div class="stat"><div class="num">${lastDate||'—'}</div><div class="lbl">చివరి హాజరు నమోదు తేదీ</div></div>
+      <div class="stat mdm"><div class="num">${presentToday}</div><div class="lbl">ఆ రోజు హాజరైన విద్యార్థులు</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">త్వరిత సమాచారం</div>
+      <p style="line-height:1.7">
+        ఈ యాప్‌లో మొత్తం 12 రిజిస్టర్లు ఉన్నాయి. <b>విద్యార్థుల హాజరు రిజిస్టర్</b> లో మీరు ప్రతి రోజు హాజరు నమోదు చేస్తే,
+        MDM రిజిస్టర్లు (రైస్ U.C., ఖర్చు, గుడ్డు, చిక్కీ, రాగి మాల్ట్ &amp; బెల్లం) ఆటోమేటిక్‌గా ఆ రోజు హాజరు ఆధారంగా లెక్కించబడతాయి.
+      </p>
+      <p class="hint">మొదటగా <b>Settings</b> లో స్కూల్ వివరాలు, ఉపాధ్యాయుల జాబితా, weekly menu (ఏ రోజు గుడ్డు/చిక్కీ/రాగి మాల్ట్) సెట్ చేసుకోండి. తర్వాత <b>Admission Register</b> లో విద్యార్థులను చేర్చండి.</p>
+      <button class="secondary no-print" onclick="window.print()">🖨 ప్రింట్ / PDF డౌన్‌లోడ్</button>
+    </div>
+    <div class="section-title">నోటీసులు / గమనికలు (Notices &amp; Reminders)</div>
+    <div id="dashNotesArea"></div>
+  `;
+  renderGenericRegister(document.getElementById('dashNotesArea'), {
+    dbKey:'dashboardNotes',
+    fields:[
+      {key:'date', label:'తేదీ', type:'date', required:true},
+      {key:'text', label:'నోటీసు / గమనిక', required:true},
+    ]
+  });
+}
+
+/* ===================== GENERIC CRUD REGISTER BUILDER ===================== */
+/* config: {dbKey, title, fields:[{key,label,type,options(fn or arr),required}], extraCols(fn)->[{label,render(row)}] , computeDays(row) } */
+function renderGenericRegister(container, config){
+  const list = DB[config.dbKey];
+  let editingId = null;
+
+  function fieldInput(f, val){
+    val = val==null?'':val;
+    if(f.type==='select'){
+      const opts = typeof f.options==='function'? f.options() : f.options;
+      return `<select data-f="${f.key}">${opts.map(o=>`<option value="${o.value}" ${o.value===val?'selected':''}>${o.label}</option>`).join('')}</select>`;
+    }
+    return `<input data-f="${f.key}" type="${f.type||'text'}" value="${escapeHtml(val)}">`;
+  }
+
+  function formHtml(row){
+    row = row || {};
+    return `<div class="formrow" id="formrow">
+      ${config.fields.map(f=>`<label>${f.label}${fieldInput(f,row[f.key])}</label>`).join('')}
+      <button id="saveBtn">${editingId? 'అప్‌డేట్ చేయి':'జోడించు'}</button>
+      ${editingId?'<button class="secondary" id="cancelBtn">రద్దు</button>':''}
+    </div>`;
+  }
+
+  function tableHtml(){
+    const extra = config.extraCols||[];
+    return `<div class="tablewrap"><table>
+      <thead><tr><th>#</th>${config.fields.map(f=>`<th>${f.label}</th>`).join('')}${extra.map(e=>`<th>${e.label}</th>`).join('')}<th class="no-print">చర్యలు</th></tr></thead>
+      <tbody>
+        ${list.map((r,i)=>`<tr>
+          <td>${i+1}</td>
+          ${config.fields.map(f=>{
+            let v=r[f.key];
+            if(f.type==='select'){
+              const opts= typeof f.options==='function'?f.options():f.options;
+              const found=opts.find(o=>o.value===v);
+              v = found?found.label:v;
+            }
+            return `<td>${escapeHtml(v)}</td>`;
+          }).join('')}
+          ${extra.map(e=>`<td>${e.render(r)}</td>`).join('')}
+          <td class="actions no-print">
+            <button class="small secondary" data-edit="${r.id}">Edit</button>
+            <button class="small danger" data-del="${r.id}">Del</button>
+          </td>
+        </tr>`).join('') || `<tr><td colspan="99" style="text-align:center;color:var(--muted)">డేటా లేదు</td></tr>`}
+      </tbody>
+    </table></div>`;
+  }
+
+  function draw(){
+    container.innerHTML = `
+      <div class="card no-print">${formHtml(editingId? list.find(r=>r.id===editingId):null)}</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="section-title" style="margin:0">జాబితా (${list.length})</div>
+          <button class="secondary no-print" id="printBtn">🖨 ప్రింట్ / PDF డౌన్‌లోడ్</button>
+        </div>
+        ${tableHtml()}
+      </div>`;
+    container.querySelector('#saveBtn').addEventListener('click',()=>{
+      const row = editingId? list.find(r=>r.id===editingId) : {id:uid()};
+      let valid=true;
+      config.fields.forEach(f=>{
+        const inp = container.querySelector(`[data-f="${f.key}"]`);
+        row[f.key]=inp.value;
+        if(f.required && !inp.value) valid=false;
+      });
+      if(!valid){ showToast('అన్ని ఫీల్డ్‌లు నింపండి'); return; }
+      if(!editingId) list.push(row);
+      editingId=null;
+      saveDB(); draw();
+    });
+    const cancelBtn = container.querySelector('#cancelBtn');
+    if(cancelBtn) cancelBtn.addEventListener('click',()=>{ editingId=null; draw(); });
+    container.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>{ editingId=b.dataset.edit; draw(); window.scrollTo(0,0); }));
+    container.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
+      if(confirm('ఈ రికార్డును తొలగించాలా?')){
+        const idx=list.findIndex(r=>r.id===b.dataset.del);
+        if(idx>-1) list.splice(idx,1);
+        saveDB(); draw();
+      }
+    }));
+    const printBtn = container.querySelector('#printBtn');
+    if(printBtn) printBtn.addEventListener('click',()=>window.print());
+  }
+  draw();
+}
+
+/* ===================== 1. ADMISSION REGISTER (= Student Master) ===================== */
+function renderAdmission(){
+  const container=document.getElementById('regInner');
+  renderGenericRegister(container, {
+    dbKey:'students',
+    fields:[
+      {key:'admissionNo', label:'అడ్మిషన్ నం.', required:true},
+      {key:'admissionDate', label:'అడ్మిషన్ తేదీ', type:'date'},
+      {key:'nameTe', label:'విద్యార్థి పేరు (తెలుగు)', required:true},
+      {key:'nameEn', label:'Name (English)'},
+      {key:'father', label:'తండ్రి పేరు'},
+      {key:'mother', label:'తల్లి పేరు'},
+      {key:'dob', label:'పుట్టిన తేదీ', type:'date'},
+      {key:'gender', label:'లింగం', type:'select', options:[{value:'Male',label:'బాలుడు'},{value:'Female',label:'బాలిక'}]},
+      {key:'category', label:'కేటగిరీ', type:'select', options:[{value:'OC',label:'OC'},{value:'BC',label:'BC'},{value:'SC',label:'SC'},{value:'ST',label:'ST'},{value:'Minority',label:'Minority'}]},
+      {key:'class', label:'తరగతి', type:'select', options:()=>DB.settings.classes.map(c=>({value:c,label:'తరగతి '+c}))},
+      {key:'aadhar', label:'ఆధార్ నం.'},
+      {key:'address', label:'చిరునామా'},
+      {key:'status', label:'స్థితి', type:'select', options:[{value:'active',label:'చదువుతున్నారు'},{value:'left',label:'మానేశారు/TC'}]},
+    ]
+  });
+}
+
+/* ===================== 2. CENSUS REGISTER ===================== */
+function renderCensus(){
+  const container=document.getElementById('regInner');
+  renderGenericRegister(container, {
+    dbKey:'census',
+    fields:[
+      {key:'householdNo', label:'హౌస్‌హోల్డ్ నం.'},
+      {key:'headName', label:'కుటుంబ పెద్ద పేరు'},
+      {key:'address', label:'చిరునామా'},
+      {key:'childName', label:'పిల్లల పేరు', required:true},
+      {key:'age', label:'వయస్సు', type:'number'},
+      {key:'gender', label:'లింగం', type:'select', options:[{value:'Male',label:'బాలుడు'},{value:'Female',label:'బాలిక'}]},
+      {key:'status', label:'స్థితి', type:'select', options:[{value:'enrolled',label:'చేరారు'},{value:'not_enrolled',label:'చేరలేదు'},{value:'dropout',label:'డ్రాపౌట్'}]},
+      {key:'class', label:'తరగతి', type:'select', options:()=>[{value:'',label:'—'}].concat(DB.settings.classes.map(c=>({value:c,label:'తరగతి '+c})))},
+    ]
+  });
+}
+
+/* ===================== 3. STUDENT ATTENDANCE (grid, feeds MDM) ===================== */
+let attState = { year:new Date().getFullYear(), month:new Date().getMonth(), cls:'ALL' };
+function renderStuAttend(){
+  const container=document.getElementById('regInner');
+  function draw(){
+    const students = activeStudents(attState.cls==='ALL'?null:attState.cls);
+    const dim = daysInMonth(attState.year, attState.month);
+    let head = `<th>విద్యార్థి</th>`;
+    for(let d=1; d<=dim; d++) head += `<th>${d}</th>`;
+    head += `<th>హాజరు రోజులు</th>`;
+    let rows='';
+    students.forEach(s=>{
+      let present=0;
+      let cells='';
+      for(let d=1; d<=dim; d++){
+        const dateStr = attState.year+'-'+pad(attState.month+1)+'-'+pad(d);
+        const val = (DB.attendance[dateStr]||{})[s.id] || '';
+        if(val==='P') present++;
+        const cls = val==='P'?'P':(val==='A'?'A':'none');
+        cells += `<td><div class="att-cell ${cls}" data-sid="${s.id}" data-date="${dateStr}">${val||'·'}</div></td>`;
+      }
+      rows += `<tr><td>${escapeHtml(s.nameTe||s.nameEn)} <small>(${s.class})</small></td>${cells}<td style="text-align:center;font-weight:700">${present}</td></tr>`;
+    });
+    container.innerHTML = `
+      <div class="card no-print">
+        <div class="formrow">
+          <label>సంవత్సరం <select id="yr">${[attState.year-1,attState.year,attState.year+1].map(y=>`<option ${y===attState.year?'selected':''}>${y}</option>`).join('')}</select></label>
+          <label>నెల <select id="mo">${['జనవరి','ఫిబ్రవరి','మార్చి','ఏప్రిల్','మే','జూన్','జూలై','ఆగస్టు','సెప్టెంబర్','అక్టోబర్','నవంబర్','డిసెంబర్'].map((n,i)=>`<option value="${i}" ${i===attState.month?'selected':''}>${n}</option>`).join('')}</select></label>
+          <label>తరగతి <select id="clsSel"><option value="ALL" ${attState.cls==='ALL'?'selected':''}>అన్నీ</option>${DB.settings.classes.map(c=>`<option value="${c}" ${c===attState.cls?'selected':''}>తరగతి ${c}</option>`).join('')}</select></label>
+        </div>
+        <p class="hint">సెల్ మీద క్లిక్ చేయండి: ఖాళీ → P (హాజరు) → A (గైర్హాజరు) → ఖాళీ. ఇక్కడ నమోదు చేసిన హాజరు ఆధారంగా అన్ని MDM రిజిస్టర్లు ఆటో అప్‌డేట్ అవుతాయి.</p>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="section-title" style="margin:0">${monthLabel(attState.year,attState.month)} — ${attState.cls==='ALL'?'అన్ని తరగతులు':'తరగతి '+attState.cls}</div>
+          <button class="secondary no-print" onclick="window.print()">🖨 ప్రింట్ / PDF డౌన్‌లోడ్</button>
+        </div>
+        <div class="tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${rows || `<tr><td colspan="99" style="text-align:center;color:var(--muted)">విద్యార్థులు లేరు — ముందుగా Admission Register లో చేర్చండి</td></tr>`}</tbody></table></div>
+      </div>`;
+    container.querySelector('#yr').addEventListener('change', e=>{ attState.year=+e.target.value; draw(); });
+    container.querySelector('#mo').addEventListener('change', e=>{ attState.month=+e.target.value; draw(); });
+    container.querySelector('#clsSel').addEventListener('change', e=>{ attState.cls=e.target.value; draw(); });
+    container.querySelectorAll('.att-cell').forEach(cell=>{
+      cell.addEventListener('click', ()=>{
+        const sid=cell.dataset.sid, date=cell.dataset.date;
+        if(!DB.attendance[date]) DB.attendance[date]={};
+        const cur = DB.attendance[date][sid];
+        const next = cur==='P' ? 'A' : (cur==='A' ? undefined : 'P');
+        if(next===undefined) delete DB.attendance[date][sid]; else DB.attendance[date][sid]=next;
+        saveDB(); draw();
+      });
+    });
+  }
+  draw();
+}
+
+/* ===================== 4. TEACHER ATTENDANCE ===================== */
+let tAttState = { year:new Date().getFullYear(), month:new Date().getMonth() };
+function renderTeachAttend(){
+  const container=document.getElementById('regInner');
+  const STATUSES=['P','A','CL','OD'];
+  function draw(){
+    const teachers = DB.settings.teachers;
+    const dim = daysInMonth(tAttState.year, tAttState.month);
+    let head=`<th>ఉపాధ్యాయుడు</th>`;
+    for(let d=1; d<=dim; d++) head+=`<th>${d}</th>`;
+    let rows='';
+    teachers.forEach(t=>{
+      let cells='';
+      for(let d=1; d<=dim; d++){
+        const dateStr = tAttState.year+'-'+pad(tAttState.month+1)+'-'+pad(d);
+        const val=(DB.teacherAttendance[dateStr]||{})[t.id]||'';
+        cells+=`<td><div class="att-cell ${val==='P'?'P':(val?'A':'none')}" style="width:34px" data-tid="${t.id}" data-date="${dateStr}">${val||'·'}</div></td>`;
+      }
+      rows+=`<tr><td>${escapeHtml(t.name)}</td>${cells}</tr>`;
+    });
+    container.innerHTML = `
+      <div class="card no-print">
+        <div class="formrow">
+          <label>సంవత్సరం <select id="yr">${[tAttState.year-1,tAttState.year,tAttState.year+1].map(y=>`<option ${y===tAttState.year?'selected':''}>${y}</option>`).join('')}</select></label>
+          <label>నెల <select id="mo">${['జనవరి','ఫిబ్రవరి','మార్చి','ఏప్రిల్','మే','జూన్','జూలై','ఆగస్టు','సెప్టెంబర్','అక్టోబర్','నవంబర్','డిసెంబర్'].map((n,i)=>`<option value="${i}" ${i===tAttState.month?'selected':''}>${n}</option>`).join('')}</select></label>
+        </div>
+        <p class="hint">సెల్ మీద క్లిక్ చేసి తిప్పండి: · → P → A → CL → OD → ·. ఉపాధ్యాయులను Settings లో జోడించండి.</p>
+      </div>
+      <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="section-title" style="margin:0">${monthLabel(tAttState.year,tAttState.month)}</div>
+        <button class="secondary no-print" onclick="window.print()">🖨 ప్రింట్ / PDF డౌన్‌లోడ్</button>
+      </div>
+      <div class="tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${rows||`<tr><td colspan="99" style="text-align:center;color:var(--muted)">Settings లో ఉపాధ్యాయులను జోడించండి</td></tr>`}</tbody></table></div></div>`;
+    container.querySelector('#yr').addEventListener('change', e=>{ tAttState.year=+e.target.value; draw(); });
+    container.querySelector('#mo').addEventListener('change', e=>{ tAttState.month=+e.target.value; draw(); });
+    container.querySelectorAll('.att-cell').forEach(cell=>{
+      cell.addEventListener('click', ()=>{
+        const tid=cell.dataset.tid, date=cell.dataset.date;
+        if(!DB.teacherAttendance[date]) DB.teacherAttendance[date]={};
+        const cur = DB.teacherAttendance[date][tid];
+        const idx = STATUSES.indexOf(cur);
+        const next = idx===-1? STATUSES[0] : STATUSES[idx+1];
+        if(!next) delete DB.teacherAttendance[date][tid]; else DB.teacherAttendance[date][tid]=next;
+        saveDB(); draw();
+      });
+    });
+  }
+  draw();
+}
+
+/* ===================== 5. C.L. REGISTER ===================== */
+function renderCL(){
+  const container=document.getElementById('regInner');
+  renderGenericRegister(container,{
+    dbKey:'clRegister',
+    fields:[
+      {key:'teacherId', label:'ఉపాధ్యాయుడు', type:'select', required:true, options:()=>DB.settings.teachers.map(t=>({value:t.id,label:t.name}))},
+      {key:'fromDate', label:'నుండి తేదీ', type:'date', required:true},
+      {key:'toDate', label:'వరకు తేదీ', type:'date'},
+      {key:'days', label:'రోజులు', type:'number'},
+      {key:'reason', label:'కారణం'},
+      {key:'sanctionedBy', label:'మంజూరు చేసినవారు'},
+    ]
+  });
+}
+
+/* ===================== 6. VISIT BOOK ===================== */
+function renderVisitBook(){
+  const container=document.getElementById('regInner');
+  renderGenericRegister(container,{
+    dbKey:'visitBook',
+    fields:[
+      {key:'date', label:'తేదీ', type:'date', required:true},
+      {key:'visitorName', label:'సందర్శకుడి పేరు', required:true},
+      {key:'designation', label:'హోదా'},
+      {key:'purpose', label:'సందర్శన ఉద్దేశ్యం'},
+      {key:'remarks', label:'పరిశీలనలు / సూచనలు'},
+    ]
+  });
+}
+
+/* ===================== 7. CCE MARKS & GRADING ===================== */
+function gradeOf(pct){
+  if(pct>=91) return 'A1'; if(pct>=81) return 'A2'; if(pct>=71) return 'B1';
+  if(pct>=61) return 'B2'; if(pct>=51) return 'C1'; if(pct>=41) return 'C2';
+  if(pct>=33) return 'D'; return 'E';
+}
+let cceState={cls:'1', subject:'తెలుగు', term:'Term1'};
+function renderCCE(){
+  const container=document.getElementById('regInner');
+  function draw(){
+    const students = activeStudents(cceState.cls);
+    let rows = students.map(s=>{
+      const rec = DB.cce.find(c=>c.studentId===s.id && c.class===cceState.cls && c.subject===cceState.subject && c.term===cceState.term) || {};
+      const fa = rec.faMarks ?? '';
+      const sa = rec.saMarks ?? '';
+      const total = (Number(fa)||0)+(Number(sa)||0);
+      const pct = ((Number(fa)||0)+(Number(sa)||0)); // assume FA(20)+SA(80)=100 scale by default
+      const grade = (fa!==''||sa!=='')? gradeOf(pct) : '';
+      return `<tr>
+        <td>${escapeHtml(s.nameTe||s.nameEn)}</td>
+        <td><input type="number" min="0" max="20" style="width:60px" data-sid="${s.id}" data-f="fa" value="${fa}"></td>
+        <td><input type="number" min="0" max="80" style="width:60px" data-sid="${s.id}" data-f="sa" value="${sa}"></td>
+        <td style="text-align:center">${total||''}</td>
+        <td style="text-align:center"><b>${grade}</b></td>
+      </tr>`;
+    }).join('');
+    container.innerHTML = `
+      <div class="card no-print">
+        <div class="formrow">
+          <label>తరగతి <select id="clsSel">${DB.settings.classes.map(c=>`<option value="${c}" ${c===cceState.cls?'selected':''}>తరగతి ${c}</option>`).join('')}</select></label>
+          <label>సబ్జెక్ట్ <select id="subSel">${['తెలుగు','ఇంగ్లీష్','గణితం','పరిసరాల విజ్ఞానం'].map(s=>`<option ${s===cceState.subject?'selected':''}>${s}</option>`).join('')}</select></label>
+          <label>టర్మ్ <select id="termSel">${['Term1','Term2','Term3'].map(t=>`<option value="${t}" ${t===cceState.term?'selected':''}>${t}</option>`).join('')}</select></label>
+        </div>
+        <p class="hint">FA (Formative, గరిష్టం 20) + SA (Summative, గరిష్టం 80) = మొత్తం 100. గ్రేడ్ ఆటోమేటిక్‌గా లెక్కించబడుతుంది.</p>
+      </div>
+      <div class="card">
+        <div class="tablewrap"><table><thead><tr><th>విద్యార్థి</th><th>FA (20)</th><th>SA (80)</th><th>మొత్తం</th><th>గ్రేడ్</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="99" style="text-align:center;color:var(--muted)">విద్యార్థులు లేరు</td></tr>`}</tbody></table></div>
+        <div style="margin-top:10px"><button id="saveMarks">మార్కులు సేవ్ చేయి</button> <button class="secondary no-print" onclick="window.print()">🖨 ప్రింట్ / PDF డౌన్‌లోడ్</button></div>
+      </div>`;
+    container.querySelector('#clsSel').addEventListener('change', e=>{cceState.cls=e.target.value; draw();});
+    container.querySelector('#subSel').addEventListener('change', e=>{cceState.subject=e.target.value; draw();});
+    container.querySelector('#termSel').addEventListener('change', e=>{cceState.term=e.target.value; draw();});
+    container.querySelector('#saveMarks').addEventListener('click', ()=>{
+      students.forEach(s=>{
+        const faInp = container.querySelector(`input[data-sid="${s.id}"][data-f="fa"]`);
+        const saInp = container.querySelector(`input[data-sid="${s.id}"][data-f="sa"]`);
+        const fa = faInp.value, sa = saInp.value;
+        let rec = DB.cce.find(c=>c.studentId===s.id && c.class===cceState.cls && c.subject===cceState.subject && c.term===cceState.term);
+        if(!rec){ rec={id:uid(), studentId:s.id, class:cceState.cls, subject:cceState.subject, term:cceState.term}; DB.cce.push(rec); }
+        rec.faMarks = fa; rec.saMarks = sa;
+        rec.grade = gradeOf((Number(fa)||0)+(Number(sa)||0));
+      });
+      saveDB(); draw();
+    });
+  }
+  draw();
+}
+
+/* ===================== MDM LEDGERS (auto from attendance) ===================== */
+function renderMdmLedger(type){
+  const container = document.getElementById('regInner');
+  const dates = getAllAttendanceDates();
+  const rates = DB.settings.rates;
+  const menu = DB.settings.weeklyMenu;
+
+  if(dates.length===0){
+    container.innerHTML = `<div class="card"><p class="hint">ముందుగా <b>విద్యార్థుల హాజరు రిజిస్టర్</b> లో కనీసం ఒక రోజు హాజరు నమోదు చేయండి. అప్పుడు ఈ రిజిస్టర్ ఆటోమేటిక్‌గా నింపబడుతుంది.</p></div>`;
+    return;
+  }
+
+  if(type==='rice'){
+    let opening = Number(DB.settings.riceOpeningBalance)||0;
+    let rowsHtml='';
+    dates.forEach(date=>{
+      const present = getPresentCount(date);
+      const consumedKg = (present * rates.riceGmPerChild)/1000;
+      const receipt = (DB.mdmReceipts.find(r=>r.date===date && r.type==='rice')||{}).qty || 0;
+      const closing = (opening + Number(receipt) - consumedKg);
+      rowsHtml += `<tr>
+        <td>${date}</td><td style="text-align:center">${present}</td>
+        <td style="text-align:right">${opening.toFixed(2)}</td>
+        <td style="text-align:right"><input type="number" step="0.01" style="width:70px" data-date="${date}" value="${receipt}"></td>
+        <td style="text-align:right">${consumedKg.toFixed(2)}</td>
+        <td style="text-align:right"><b>${closing.toFixed(2)}</b></td>
+      </tr>`;
+      opening = closing;
+    });
+    container.innerHTML = `
+      <div class="card no-print">
+        <div class="formrow">
+          <label>ప్రారంభ నిల్వ (kg) <input id="openBal" type="number" step="0.01" value="${DB.settings.riceOpeningBalance||0}"></label>
+          <button id="setOpen">సెట్ చేయి</button>
+        </div>
+        <p class="hint">రైస్ వినియోగం = హాజరైన విద్యార్థులు × ${rates.riceGmPerChild} గ్రా. (Settings లో మార్చుకోవచ్చు). Receipt కాలమ్‌లో వచ్చిన బియ్యం (kg) నమోదు చేయండి.</p>
+      </div>
+      <div class="card"><div class="tablewrap"><table class="mdmtable"><thead><tr><th>తేదీ</th><th>హాజరు</th><th>ప్రారంభ నిల్వ (kg)</th><th>రసీదు (kg)</th><th>వినియోగం (kg)</th><th>మిగులు నిల్వ (kg)</th></tr></thead>
+      <tbody>${rowsHtml}</tbody></table></div>
+      <div style="margin-top:10px"><button class="secondary" onclick="window.print()">🖨 ప్రింట్ / PDF డౌన్‌లోడ్</button></div></div>`;
+    container.querySelector('#setOpen').addEventListener('click',()=>{
+      DB.settings.riceOpeningBalance = Number(container.querySelector('#openBal').value)||0;
+      saveDB(); renderMdmLedger('rice');
+    });
+    container.querySelectorAll('input[data-date]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const date=inp.dataset.date;
+        let rec = DB.mdmReceipts.find(r=>r.date===date && r.type==='rice');
+        if(!rec){ rec={id:uid(), date, type:'rice'}; DB.mdmReceipts.push(rec); }
+        rec.qty = Number(inp.value)||0;
+        saveDB(); renderMdmLedger('rice');
+      });
+    });
+    return;
+  }
+
+  if(type==='expenditure'){
+    let cum=0;
+    let rowsHtml = dates.map(date=>{
+      const present=getPresentCount(date);
+      const cost = present*Number(rates.cookingCost);
+      cum+=cost;
+      return `<tr><td>${date}</td><td style="text-align:center">${present}</td><td style="text-align:right">₹${Number(rates.cookingCost).toFixed(2)}</td><td style="text-align:right">₹${cost.toFixed(2)}</td><td style="text-align:right"><b>₹${cum.toFixed(2)}</b></td></tr>`;
+    }).join('');
+    container.innerHTML = `
+      <div class="card no-print"><p class="hint">ఖర్చు = హాజరైన విద్యార్థులు × cooking cost rate (₹${rates.cookingCost}/విద్యార్థి, Settings లో మార్చవచ్చు).</p></div>
+      <div class="card"><div class="tablewrap"><table class="mdmtable"><thead><tr><th>తేదీ</th><th>హాజరు</th><th>రేటు/విద్యార్థి</th><th>ఆ రోజు ఖర్చు</th><th>మొత్తం (Cumulative)</th></tr></thead>
+      <tbody>${rowsHtml}</tbody></table></div><div style="margin-top:10px"><button class="secondary" onclick="window.print()">🖨 ప్రింట్ / PDF డౌన్‌లోడ్</button></div></div>`;
+    return;
+  }
+
+  // egg / chikki / ragimalt — only on matching weekly-menu days
+  const config = {
+    egg:{label:'గుడ్డు', unit:'నం.', rate:rates.eggRate, perChild:1, menuKey:'egg'},
+    chikki:{label:'చిక్కీ', unit:'నం.', rate:rates.chikkiRate, perChild:1, menuKey:'chikki'},
+    ragimalt:{label:'రాగి మాల్ట్ & బెల్లం', unit:'గ్రా.', rate:rates.ragiMaltRate, perChild:rates.ragiMaltGm, menuKey:'ragimalt'}
+  }[type];
+
+  const matchDates = dates.filter(d=>menu[weekdayOf(d)]===config.menuKey);
+  let cum=0;
+  let rowsHtml = matchDates.map(date=>{
+    const present=getPresentCount(date);
+    const qty = present*config.perChild;
+    const cost = (type==='ragimalt'? (qty/1000)*config.rate : qty*config.rate); // ragimalt rate assumed per kg; qty in gm
+    cum+=cost;
+    return `<tr><td>${date}</td><td style="text-align:center">${present}</td><td style="text-align:right">${qty} ${config.unit}</td><td style="text-align:right">₹${cost.toFixed(2)}</td><td style="text-align:right"><b>₹${cum.toFixed(2)}</b></td></tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="card no-print"><p class="hint">
+      ఈ రిజిస్టర్ Settings → Weekly Menu లో "<b>${config.label}</b>" గా గుర్తించిన వారంలోని రోజులలో మాత్రమే కనిపిస్తుంది.
+      ${matchDates.length===0? '<br><b>ప్రస్తుతం ఏ రోజు ఈ ఐటెమ్‌కి కేటాయించలేదు — Settings లో Weekly Menu చెక్ చేయండి.</b>':''}
+    </p></div>
+    <div class="card"><div class="tablewrap"><table class="mdmtable"><thead><tr><th>తేదీ</th><th>హాజరు</th><th>వినియోగం (${config.unit})</th><th>ఖర్చు</th><th>మొత్తం (Cumulative)</th></tr></thead>
+    <tbody>${rowsHtml || `<tr><td colspan="99" style="text-align:center;color:var(--muted)">డేటా లేదు</td></tr>`}</tbody></table></div>
+    <div style="margin-top:10px"><button class="secondary" onclick="window.print()">🖨 ప్రింట్ / PDF డౌన్‌లోడ్</button></div></div>`;
+}
+
+/* ===================== SETTINGS ===================== */
+function renderSettings(){
+  const container=document.getElementById('regInner');
+  const s = DB.settings;
+  function draw(){
+    container.innerHTML = `
+      <div class="card">
+        <div class="section-title">స్కూల్ వివరాలు</div>
+        <div class="formrow">
+          <label>స్కూల్ పేరు <input id="schoolName" value="${escapeHtml(s.schoolName)}"></label>
+          <label>DISE కోడ్ <input id="diseCode" value="${escapeHtml(s.diseCode)}"></label>
+          <label>గ్రామం <input id="village" value="${escapeHtml(s.village)}"></label>
+          <label>మండలం <input id="mandal" value="${escapeHtml(s.mandal)}"></label>
+          <label>జిల్లా <input id="district" value="${escapeHtml(s.district)}"></label>
+          <label>H.M. పేరు <input id="hmName" value="${escapeHtml(s.rates.hmName||'')}"></label>
+        </div>
+        <button id="saveSchool">సేవ్ చేయి</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">ఉపాధ్యాయుల జాబితా</div>
+        <div class="formrow">
+          <label>పేరు <input id="tName"></label>
+          <label>హోదా <input id="tDesig" placeholder="SGT / SA / HM"></label>
+          <button id="addTeacher">జోడించు</button>
+        </div>
+        <div class="tablewrap"><table><thead><tr><th>#</th><th>పేరు</th><th>హోదా</th><th>చర్య</th></tr></thead>
+        <tbody>${s.teachers.map((t,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.designation)}</td><td><button class="small danger" data-delt="${t.id}">Del</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--muted)">ఎవరూ లేరు</td></tr>'}</tbody></table></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">MDM రేట్లు (Editable)</div>
+        <div class="formrow">
+          <label>రైస్ (గ్రా./విద్యార్థి/రోజు) <input id="riceGm" type="number" value="${s.rates.riceGmPerChild}"></label>
+          <label>Cooking Cost (₹/విద్యార్థి/రోజు) <input id="cookCost" type="number" step="0.01" value="${s.rates.cookingCost}"></label>
+          <label>గుడ్డు రేటు (₹/నం.) <input id="eggRate" type="number" step="0.01" value="${s.rates.eggRate}"></label>
+          <label>చిక్కీ రేటు (₹/నం.) <input id="chikkiRate" type="number" step="0.01" value="${s.rates.chikkiRate}"></label>
+          <label>రాగి మాల్ట్/బెల్లం రేటు (₹/kg) <input id="ragiRate" type="number" step="0.01" value="${s.rates.ragiMaltRate}"></label>
+          <label>రాగి మాల్ట్/బెల్లం పరిమాణం (గ్రా./విద్యార్థి) <input id="ragiGm" type="number" value="${s.rates.ragiMaltGm}"></label>
+        </div>
+        <button id="saveRates">రేట్లు సేవ్ చేయి</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">వారంలో ఏ రోజు ఏమి ఇస్తారు (Weekly Menu)</div>
+        <div class="formrow">
+          ${['ఆది','సోమ','మంగళ','బుధ','గురు','శుక్ర','శని'].map((d,i)=>`
+            <label>${d} <select data-day="${i}">
+              ${[['egg','గుడ్డు'],['chikki','చిక్కీ'],['ragimalt','రాగి మాల్ట్/బెల్లం'],['holiday','—']].map(([v,l])=>`<option value="${v}" ${s.weeklyMenu[i]===v?'selected':''}>${l}</option>`).join('')}
+            </select></label>`).join('')}
+        </div>
+        <button id="saveMenu">మెనూ సేవ్ చేయి</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">తరగతులు</div>
+        <div class="formrow">
+          <label>తరగతుల జాబితా (కామాతో వేరు చేయండి) <input id="classList" style="width:220px" value="${s.classes.join(',')}"></label>
+          <button id="saveClasses">సేవ్ చేయి</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">బ్యాకప్ / రీస్టోర్</div>
+        <div class="formrow">
+          <button id="exportBtn">⬇ Export (JSON Backup)</button>
+          <button class="secondary" id="importBtn">⬆ Import (Restore)</button>
+          <button class="danger" id="resetBtn">🗑 All Data Reset</button>
+        </div>
+        <p class="hint">డేటా ఈ బ్రౌజర్‌లో ఆటోమేటిక్‌గా సేవ్ అవుతుంది. వేరే device/browser కి తరలించడానికి లేదా భద్రత కోసం, తరచుగా Export తీసుకోండి.</p>
+      </div>
+    `;
+    container.querySelector('#saveSchool').addEventListener('click',()=>{
+      s.schoolName=container.querySelector('#schoolName').value;
+      s.diseCode=container.querySelector('#diseCode').value;
+      s.village=container.querySelector('#village').value;
+      s.mandal=container.querySelector('#mandal').value;
+      s.district=container.querySelector('#district').value;
+      s.rates.hmName=container.querySelector('#hmName').value;
+      document.getElementById('brandName').textContent = s.schoolName || 'MySchool Registers';
+      saveDB();
+    });
+    container.querySelector('#addTeacher').addEventListener('click',()=>{
+      const name=container.querySelector('#tName').value.trim();
+      if(!name){ showToast('పేరు నమోదు చేయండి'); return; }
+      s.teachers.push({id:uid(), name, designation:container.querySelector('#tDesig').value});
+      saveDB(); draw();
+    });
+    container.querySelectorAll('[data-delt]').forEach(b=>b.addEventListener('click',()=>{
+      const idx=s.teachers.findIndex(t=>t.id===b.dataset.delt);
+      if(idx>-1) s.teachers.splice(idx,1);
+      saveDB(); draw();
+    }));
+    container.querySelector('#saveRates').addEventListener('click',()=>{
+      s.rates.riceGmPerChild=Number(container.querySelector('#riceGm').value)||0;
+      s.rates.cookingCost=Number(container.querySelector('#cookCost').value)||0;
+      s.rates.eggRate=Number(container.querySelector('#eggRate').value)||0;
+      s.rates.chikkiRate=Number(container.querySelector('#chikkiRate').value)||0;
+      s.rates.ragiMaltRate=Number(container.querySelector('#ragiRate').value)||0;
+      s.rates.ragiMaltGm=Number(container.querySelector('#ragiGm').value)||0;
+      saveDB();
+    });
+    container.querySelector('#saveMenu').addEventListener('click',()=>{
+      container.querySelectorAll('[data-day]').forEach(sel=>{ s.weeklyMenu[sel.dataset.day]=sel.value; });
+      saveDB();
+    });
+    container.querySelector('#saveClasses').addEventListener('click',()=>{
+      s.classes = container.querySelector('#classList').value.split(',').map(x=>x.trim()).filter(Boolean);
+      saveDB(); showToast('తరగతులు అప్‌డేట్ అయ్యాయి');
+    });
+    container.querySelector('#exportBtn').addEventListener('click', exportData);
+    container.querySelector('#importBtn').addEventListener('click', ()=>document.getElementById('importFile').click());
+    container.querySelector('#resetBtn').addEventListener('click', ()=>{
+      if(confirm('హెచ్చరిక: మొత్తం డేటా శాశ్వతంగా తొలగించబడుతుంది. కొనసాగించాలా?')){
+        if(confirm('మీరు ఖచ్చితంగా ఉన్నారా? ఈ చర్యను వెనక్కి తీసుకోలేరు.')){
+          DB = defaultDB(); saveDB(); location.reload();
+        }
+      }
+    });
+  }
+  draw();
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download = 'myschool_backup_'+todayStr()+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('బ్యాకప్ డౌన్‌లోడ్ అయ్యింది');
+}
+
+document.getElementById('importFile').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const parsed = JSON.parse(evt.target.result);
+      if(confirm('ప్రస్తుత డేటా భర్తీ చేయబడుతుంది. కొనసాగించాలా?')){
+        DB = Object.assign(defaultDB(), parsed);
+        saveDB();
+        renderNav(); renderView();
+        showToast('డేటా రీస్టోర్ అయ్యింది ✓');
+      }
+    }catch(err){
+      alert('ఫైల్ చదవడంలో లోపం: సరైన JSON బ్యాకప్ ఫైల్ ఎంచుకోండి.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+});
+
+/* ===================== INIT ===================== */
+function init(){
+  if(DB.settings.schoolName) document.getElementById('brandName').textContent = DB.settings.schoolName;
+  renderNav();
+  renderView();
+}
+init();
+</script>
+</body>
+</html>
